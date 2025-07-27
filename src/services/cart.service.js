@@ -49,11 +49,7 @@ class CartService {
           .first();
         console.log('CartService: Existing cart item:', existingCartItem);
 
-        let finalQuantity = quantity;
-        if (existingCartItem) {
-          finalQuantity += existingCartItem.quantity;
-          console.log('CartService: Existing item, new final quantity:', finalQuantity);
-        }
+        const finalQuantity = quantity;
 
         // 2. Kiểm tra số lượng yêu cầu so với tồn kho
         if (finalQuantity > product.stock) {

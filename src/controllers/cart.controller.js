@@ -150,9 +150,17 @@ const updateMyCartItem = catchAsync(async (req, res, next) => {
       console.warn(`updateMyCartItem: Item ${product_id} not found in cart ${userCart.id} for update.`);
       return next(new ApiError(404, 'Không tìm thấy sản phẩm trong giỏ hàng để cập nhật.'));
     }
+    
+    // Refetch the entire cart to ensure consistency and a consistent API response
+    const updatedCart = await cartService.getCartByUserId(req.user.id);
+    const detailedItems = await Promise.all(updatedCart.items.map(async (item) => {
+      const product = await productService.getProductById(item.product_id);
+      return { ...item, product: product || null };
+    }));
+
     res.status(200).json(JSend.success({
       message: 'Số lượng sản phẩm đã được cập nhật.',
-      item: updatedItem
+      cart: { ...updatedCart, items: detailedItems }
     }));
   }
   console.log('--- Exiting updateMyCartItem controller ---');
