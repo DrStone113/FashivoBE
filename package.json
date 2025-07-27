@@ -3,11 +3,10 @@
   "version": "1.0.0",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
+    "start": "npm run migrate && node server.js",
     "dev": "node --watch server.js",
     "migrate": "knex migrate:latest",
-    "seed": "knex seed:run",
-    "deploy": "npm run migrate && npm start"
+    "seed": "knex seed:run"
   },
   "keywords": [],
   "author": "",
