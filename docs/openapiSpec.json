@@ -11,10 +11,15 @@
   },
   "servers": [
     {
+      "url": "https://api.fashion.drstone.id.vn",
+      "description": "Production server"
+    },
+    {
       "url": "http://localhost:3000",
       "description": "Development server"
     }
   ],
+
   "paths": {
     "/api/v1/auth/signup": {
       "post": {
