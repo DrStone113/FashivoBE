@@ -160,7 +160,7 @@ const updateMyCartItem = catchAsync(async (req, res, next) => {
 
     res.status(200).json(JSend.success({
       message: 'Số lượng sản phẩm đã được cập nhật.',
-      cart: { ...updatedCart, items: detailedItems }
+      item: { ...updatedCart, items: detailedItems }
     }));
   }
   console.log('--- Exiting updateMyCartItem controller ---');
