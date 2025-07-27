@@ -1,0 +1,6 @@
+// ct313hm02-project-DrStone113/backend-api/jsconfig.json
+{
+  "compilerOptions": {
+    "strict": true
+  }
+}
