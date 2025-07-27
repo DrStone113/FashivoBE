@@ -39,6 +39,7 @@ const app = express();
 // Các Middlewares toàn cục
 const allowedOrigins = [
   "https://fashion.drstone.id.vn",
+  "https://api.fashion.drstone.id.vn",
   "http://localhost:5173",
   "http://localhost:3000",
 ];
