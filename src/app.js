@@ -33,6 +33,10 @@ try {
 
 const app = express();
 
+// Trust the first proxy in front of the app (e.g., Railway's load balancer)
+// This is crucial for express-rate-limit to work correctly.
+app.set('trust proxy', 1);
+
 // Set up CORS options
 const allowedOrigins = [
   'http://localhost:5173',
