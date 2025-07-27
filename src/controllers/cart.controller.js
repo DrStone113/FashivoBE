@@ -88,20 +88,13 @@ const addItemToMyCart = catchAsync(async (req, res, next) => {
     return next(new ApiError(404, 'Sản phẩm không tồn tại.'));
   }
 
-  await cartService.createOrUpdateCart(req.user.id, [{ product_id, quantity }]);
-  
-  // Sau khi thêm, lấy lại toàn bộ giỏ hàng với chi tiết sản phẩm
-  const updatedCart = await cartService.getCartByUserId(req.user.id);
-  const detailedItems = await Promise.all(updatedCart.items.map(async (item) => {
-    const product = await productService.getProductById(item.product_id);
-    return { ...item, product: product || null };
-  }));
-
-  console.log('addItemToMyCart: Returning updated cart with details:', { ...updatedCart, items: detailedItems });
+  const { cart, items } = await cartService.createOrUpdateCart(req.user.id, [{ product_id, quantity }]);
+  console.log('addItemToMyCart: Cart after createOrUpdate:', cart);
+  console.log('addItemToMyCart: Items after createOrUpdate:', items);
 
   res.status(200).json(JSend.success({
     message: 'Sản phẩm đã được thêm vào giỏ hàng.',
-    cart: { ...updatedCart, items: detailedItems }
+    cart: { ...cart, items }
   }));
   console.log('--- Exiting addItemToMyCart controller ---');
 });
@@ -150,17 +143,9 @@ const updateMyCartItem = catchAsync(async (req, res, next) => {
       console.warn(`updateMyCartItem: Item ${product_id} not found in cart ${userCart.id} for update.`);
       return next(new ApiError(404, 'Không tìm thấy sản phẩm trong giỏ hàng để cập nhật.'));
     }
-    
-    // Refetch the entire cart to ensure consistency and a consistent API response
-    const updatedCart = await cartService.getCartByUserId(req.user.id);
-    const detailedItems = await Promise.all(updatedCart.items.map(async (item) => {
-      const product = await productService.getProductById(item.product_id);
-      return { ...item, product: product || null };
-    }));
-
     res.status(200).json(JSend.success({
       message: 'Số lượng sản phẩm đã được cập nhật.',
-      item: { ...updatedCart, items: detailedItems }
+      item: updatedItem
     }));
   }
   console.log('--- Exiting updateMyCartItem controller ---');

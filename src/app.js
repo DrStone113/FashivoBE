@@ -2,13 +2,10 @@
 const express = require("express");
 const cors = require("cors");
 const swaggerUi = require("swagger-ui-express");
-const {
-  apiLimiter,
-  authLimiter,
-} = require("./middlewares/rateLimit.middleware");
+const { apiLimiter, authLimiter } = require('./middlewares/rateLimit.middleware');
 
 // Đảm bảo dotenv được load sớm nhất để các biến môi trường có sẵn
-require("dotenv").config();
+require('dotenv').config();
 
 const JSend = require("./jsend");
 
@@ -21,45 +18,45 @@ const authRouter = require("./routes/auth.route"); // Import authRouter MỚI
 
 const {
   resourceNotFound, // Middleware xử lý 404 (chưa tìm thấy tài nguyên)
-  handleError, // Middleware xử lý lỗi tập trung
+  handleError,      // Middleware xử lý lỗi tập trung
 } = require("./controllers/errors.controller");
 
 let swaggerDocument;
 try {
   swaggerDocument = require("../docs/openapiSpec.json");
-  console.log("Swagger document loaded successfully.");
-  console.log("Swagger document info title:", swaggerDocument.info.title);
+  console.log('Swagger document loaded successfully.');
+  console.log('Swagger document info title:', swaggerDocument.info.title);
 } catch (error) {
-  console.error("Failed to load swagger document:", error);
+  console.error('Failed to load swagger document:', error);
   swaggerDocument = {};
 }
 
 const app = express();
 
-// Các Middlewares toàn cục
+// Set up CORS options
 const allowedOrigins = [
-  "https://fashion.drstone.id.vn",
-  "https://api.fashion.drstone.id.vn",
-  "http://localhost:5173",
-  "http://localhost:3000",
+  'http://localhost:5173', 
+  'http://localhost:3000', 
+  'https://fashion.drstone.id.vn'
 ];
 
 const corsOptions = {
-  origin: function (origin, callback) {
-    // allow requests with no origin (like mobile apps or curl requests)
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
     if (allowedOrigins.indexOf(origin) === -1) {
-      const msg =
-        "The CORS policy for this site does not " +
-        "allow access from the specified Origin.";
+      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
       return callback(new Error(msg), false);
     }
     return callback(null, true);
   },
-  optionsSuccessStatus: 200,
+  credentials: true, // Allow cookies to be sent
 };
+
 app.use(cors(corsOptions));
 
+
+// Các Middlewares toàn cục
 app.use(express.json()); // Để xử lý application/json
 app.use(express.urlencoded({ extended: true })); // Để xử lý application/x-www-form-urlencoded
 
@@ -72,7 +69,7 @@ app.get("/", (req, res) => {
 });
 
 // Setup Swagger UI
-console.log("Attempting to setup Swagger UI for /api-docs...");
+console.log('Attempting to setup Swagger UI for /api-docs...');
 const swaggerOptions = {
   customCss: `
     body {
@@ -225,14 +222,10 @@ const swaggerOptions = {
   customSiteTitle: "🛍️ Fashivo API - Modern & Clean",
 };
 
-app.use(
-  "/api-docs",
-  swaggerUi.serve,
-  swaggerUi.setup(swaggerDocument, swaggerOptions)
-);
-console.log("Swagger UI setup line executed.");
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument, swaggerOptions));
+console.log('Swagger UI setup line executed.');
 
-app.use("/api/", apiLimiter);
+app.use('/api/', apiLimiter);
 
 // Serve static files (e.g., product images)
 app.use("/public", express.static("public"));
