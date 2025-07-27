@@ -88,13 +88,20 @@ const addItemToMyCart = catchAsync(async (req, res, next) => {
     return next(new ApiError(404, 'Sản phẩm không tồn tại.'));
   }
 
-  const { cart, items } = await cartService.createOrUpdateCart(req.user.id, [{ product_id, quantity }]);
-  console.log('addItemToMyCart: Cart after createOrUpdate:', cart);
-  console.log('addItemToMyCart: Items after createOrUpdate:', items);
+  await cartService.createOrUpdateCart(req.user.id, [{ product_id, quantity }]);
+  
+  // Sau khi thêm, lấy lại toàn bộ giỏ hàng với chi tiết sản phẩm
+  const updatedCart = await cartService.getCartByUserId(req.user.id);
+  const detailedItems = await Promise.all(updatedCart.items.map(async (item) => {
+    const product = await productService.getProductById(item.product_id);
+    return { ...item, product: product || null };
+  }));
+
+  console.log('addItemToMyCart: Returning updated cart with details:', { ...updatedCart, items: detailedItems });
 
   res.status(200).json(JSend.success({
     message: 'Sản phẩm đã được thêm vào giỏ hàng.',
-    cart: { ...cart, items }
+    cart: { ...updatedCart, items: detailedItems }
   }));
   console.log('--- Exiting addItemToMyCart controller ---');
 });

@@ -68,7 +68,7 @@ class CartService {
             .update({
               quantity: finalQuantity,
               price: product.price,
-              updated_at: knex.fn.now() // Sử dụng knex.fn.now() cho timestamp
+              updated_at: new Date()
             })
             .returning('*');
           results.push(updatedItem);
@@ -79,14 +79,14 @@ class CartService {
             product_id,
             quantity: finalQuantity,
             price: product.price,
-            created_at: knex.fn.now(), // Thêm created_at cho item mới
-            updated_at: knex.fn.now()
+            created_at: new Date(),
+            updated_at: new Date()
           }).returning('*');
           results.push(newItem);
         }
       }
       // Cập nhật updated_at của giỏ hàng chính
-      await trx('carts').where({ id: cartId }).update({ updated_at: knex.fn.now() });
+      await trx('carts').where({ id: cartId }).update({ updated_at: new Date() });
       console.log('CartService: createOrUpdateCart - Transaction complete.');
       return { cart, items: results };
     });
@@ -311,14 +311,14 @@ class CartService {
         .update({
           quantity,
           price: product.price, // Cập nhật giá sản phẩm hiện tại khi số lượng thay đổi
-          updated_at: knex.fn.now()
+          updated_at: new Date()
         })
         .returning('*');
       console.log('CartService: updateCartItem - Updated cart item:', updatedItem);
 
       // 3. Cập nhật timestamp của giỏ hàng cha
       if (updatedItem) {
-        await trx('carts').where({ id: cartId }).update({ updated_at: knex.fn.now() });
+        await trx('carts').where({ id: cartId }).update({ updated_at: new Date() });
         console.log('CartService: updateCartItem - Parent cart updated_at updated.');
       } else {
           console.warn('CartService: updateCartItem - No item was updated by Knex query.'); // <-- THÊM DÒNG NÀY
@@ -340,7 +340,7 @@ class CartService {
       .where({ cart_id: cartId, product_id: productId })
       .del();
     if (deletedCount > 0) {
-      await this.knex('carts').where({ id: cartId }).update({ updated_at: knex.fn.now() });
+      await this.knex('carts').where({ id: cartId }).update({ updated_at: new Date() });
       console.log(`CartService: deleted ${deletedCount} item(s) from cart ${cartId}. Parent cart updated.`);
     } else {
       console.log(`CartService: No item ${productId} found in cart ${cartId} to delete.`);
