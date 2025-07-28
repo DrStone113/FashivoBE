@@ -9,25 +9,21 @@ const path = require("path"); // For path manipulation
 
 const createProduct = catchAsync(async (req, res, next) => {
     const uploadedFile = (req.files && req.files.length > 0) ? req.files[0] : null;
-    let image_url;
 
-    if (uploadedFile) {
-        image_url = `/public/image/products/${uploadedFile.filename}`;
-    } else if (req.body.image_url) {
-        image_url = req.body.image_url;
-    } else {
-        return next(new ApiError(400, "Product image is required (either as a file upload or a URL)."));
+    if (!uploadedFile) {
+        // Only file uploads are accepted for creating products.
+        return next(new ApiError(400, "Product image file is required."));
     }
-
+    
+    const image_url = `/public/image/products/${uploadedFile.filename}`;
     const { type, name, description, price, stock, category_id } = req.body;
 
     // Validate category
     if (category_id !== undefined && category_id !== null) {
         const categoryExists = await categoryService.getCategoryById(category_id);
         if (!categoryExists) {
-            if (uploadedFile) {
-                await fs.unlink(uploadedFile.path); // Clean up uploaded file
-            }
+            // Clean up uploaded file if category is invalid
+            await fs.unlink(uploadedFile.path);
             return next(new ApiError(404, "Category not found."));
         }
     }
@@ -49,6 +45,7 @@ const createProduct = catchAsync(async (req, res, next) => {
 });
 
 
+
 const updateProduct = catchAsync(async (req, res, next) => {
     const { id } = req.params;
     const uploadedFile = (req.files && req.files.length > 0) ? req.files[0] : null;
@@ -61,7 +58,7 @@ const updateProduct = catchAsync(async (req, res, next) => {
         return next(new ApiError(404, "No product found with that ID to update"));
     }
 
-    // 2. Safely construct update object
+    // 2. Safely construct update object from valid fields
     const updateData = {};
     const validFields = ['type', 'name', 'description', 'price', 'stock', 'available', 'category_id'];
     validFields.forEach(field => {
@@ -70,22 +67,15 @@ const updateProduct = catchAsync(async (req, res, next) => {
         }
     });
 
-    // 3. Handle image update logic
-    const isOldImageLocal = oldProduct.image_url && oldProduct.image_url.startsWith('/public/image/products/');
+    // 3. Handle image update logic - ONLY from file upload
     if (uploadedFile) {
         updateData.image_url = `/public/image/products/${uploadedFile.filename}`;
+        const isOldImageLocal = oldProduct.image_url && oldProduct.image_url.startsWith('/public/image/products/');
         if (isOldImageLocal) {
             oldImagePath = path.join(__dirname, "../..", oldProduct.image_url);
         }
-    } else if (req.body.image_url !== undefined) {
-        const newImageUrl = (req.body.image_url === '' || req.body.image_url === null) ? null : req.body.image_url;
-        if (newImageUrl !== oldProduct.image_url) {
-            updateData.image_url = newImageUrl;
-            if (isOldImageLocal) {
-                oldImagePath = path.join(__dirname, "../..", oldProduct.image_url);
-            }
-        }
     }
+    // NOTE: We no longer check for req.body.image_url
 
     // 4. Handle boolean 'available' field from FormData
     if (updateData.available !== undefined) {
@@ -96,12 +86,12 @@ const updateProduct = catchAsync(async (req, res, next) => {
     if (updateData.category_id !== undefined && updateData.category_id !== null) {
         const categoryExists = await categoryService.getCategoryById(updateData.category_id);
         if (!categoryExists) {
-            if (uploadedFile) await fs.unlink(uploadedFile.path);
+            if (uploadedFile) await fs.unlink(uploadedFile.path); // Clean up file if category is bad
             return next(new ApiError(404, "Category not found."));
         }
     }
 
-    // 6. Perform update if there's data to update
+    // 6. Perform update only if there's data to update
     if (Object.keys(updateData).length === 0) {
         return res.status(200).json(JSend.success({ product: oldProduct, message: "No changes detected." }));
     }
@@ -109,6 +99,7 @@ const updateProduct = catchAsync(async (req, res, next) => {
     updateData.updated_at = new Date();
     const updatedProduct = await productService.updateProduct(id, updateData);
 
+    // 8. If update is successful, delete the old image file if necessary
     if (updatedProduct && oldImagePath) {
         try {
             await fs.unlink(oldImagePath);
@@ -119,6 +110,7 @@ const updateProduct = catchAsync(async (req, res, next) => {
     
     return res.status(200).json(JSend.success({ product: updatedProduct }));
 });
+
 
 const getAllProducts = catchAsync(async (req, res, _next) => {
     const filters = req.query;
