@@ -37,8 +37,16 @@ const app = express();
 // This is crucial for rate limiting and other security features to work correctly.
 app.set('trust proxy', 1);
 
+// Set up CORS with more specific options to ensure it applies everywhere.
+const corsOptions = {
+  origin: '*', // Allow all origins
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  credentials: true,
+  optionsSuccessStatus: 204,
+};
+app.use(cors(corsOptions));
+
 // Các Middlewares toàn cục
-app.use(cors());
 app.use(express.json()); // Để xử lý application/json
 app.use(express.urlencoded({ extended: true })); // Để xử lý application/x-www-form-urlencoded
 
@@ -210,7 +218,8 @@ console.log('Swagger UI setup line executed.');
 app.use('/api/', apiLimiter);
 
 // Serve static files (e.g., product images)
-app.use("/public", cors(), express.static("public"));
+// The global CORS middleware now handles this.
+app.use("/public", express.static("public"));
 
 // Đăng ký các router
 // Quan trọng: Auth router nên được đăng ký đầu tiên nếu bạn muốn xác thực hoạt động trước các route khác
