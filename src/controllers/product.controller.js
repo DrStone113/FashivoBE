@@ -44,55 +44,65 @@ const createProduct = catchAsync(async (req, res, next) => {
 
 const updateProduct = catchAsync(async (req, res, next) => {
     const { id } = req.params;
-    let image_url = undefined;
     let oldImagePath = null;
 
+    // 1. Fetch the existing product
     const oldProduct = await productService.getProductById(id);
     if (!oldProduct) {
+        // If product doesn't exist, delete any uploaded file to prevent orphans
         if (req.file) {
             try {
                 await fs.unlink(req.file.path);
             } catch (unlinkErr) {
-                console.error(`Failed to delete newly uploaded file due to product not found: ${req.file.path}`, unlinkErr);
+                console.error(`Failed to delete newly uploaded file for non-existent product: ${req.file.path}`, unlinkErr);
             }
         }
         return next(new ApiError(404, "No product found with that ID to update"));
     }
 
+    // 2. Prepare the data for update, starting with the request body
+    const updateData = { ...req.body };
+
+    // 3. Handle image update logic
+    const isOldImageLocal = oldProduct.image_url && oldProduct.image_url.startsWith('/public/image/products/');
+    
     if (req.file) {
-        image_url = `/public/image/products/${req.file.filename}`; // <-- SỬA TỪ 'img' THÀNH 'image'
-        if (oldProduct.image_url && oldProduct.image_url.includes("/public/image/products/product-")) { // <-- SỬA TỪ 'img' THÀNH 'image'
+        // Case 1: A new file is uploaded, this takes precedence.
+        updateData.image_url = `/public/image/products/${req.file.filename}`;
+        if (isOldImageLocal) {
             oldImagePath = path.join(__dirname, "../..", oldProduct.image_url);
         }
-    } else if (req.body.image_url === '') {
-        image_url = null;
-        if (oldProduct.image_url && oldProduct.image_url.includes("/public/image/products/product-")) { // <-- SỬA TỪ 'img' THÀNH 'image'
+    } else if (req.body.image_url !== undefined) {
+        // Case 2: image_url is provided in the body (can be a new URL, an empty string, or the same URL)
+        if (req.body.image_url === null || req.body.image_url === '') {
+            // User wants to remove the image
+            updateData.image_url = null;
+        } else {
+            // User provided a new URL
+            updateData.image_url = req.body.image_url;
+        }
+        
+        // If the image is changing and the old one was local, mark it for deletion.
+        if (updateData.image_url !== oldProduct.image_url && isOldImageLocal) {
             oldImagePath = path.join(__dirname, "../..", oldProduct.image_url);
         }
     }
 
-    const { type, name, description, price, stock, available, category_id } = req.body;
+    // 4. Handle boolean 'available' field from FormData (which sends strings)
+    if (updateData.available !== undefined) {
+        updateData.available = String(updateData.available).toLowerCase() === 'true';
+    }
 
-    const updateData = {
-        type,
-        name,
-        description,
-        price,
-        stock,
-        available,
-        image_url,
-        category_id,
-    };
-
+    // 5. Remove any keys that are undefined to avoid overwriting with nulls unnecessarily
     Object.keys(updateData).forEach(
         (key) => updateData[key] === undefined && delete updateData[key]
     );
 
+    // 6. Validate category if it's being updated
     if (updateData.category_id !== undefined && updateData.category_id !== null) {
-        const categoryExists = await categoryService.getCategoryById(
-            updateData.category_id
-        );
+        const categoryExists = await categoryService.getCategoryById(updateData.category_id);
         if (!categoryExists) {
+            // If category is invalid, delete any newly uploaded file
             if (req.file) {
                 try {
                     await fs.unlink(req.file.path);
@@ -104,27 +114,31 @@ const updateProduct = catchAsync(async (req, res, next) => {
         }
     }
 
+    // 7. Perform the update in the database
     const updatedProduct = await productService.updateProduct(id, updateData);
 
-    if (updatedProduct) {
-        if (oldImagePath) {
-            try {
-                await fs.unlink(oldImagePath); 
-                console.log(`Successfully deleted old image: ${oldImagePath}`);
-            } catch (err) {
-                if (err.code === 'ENOENT') {
-                    console.warn(`Old image file not found at ${oldImagePath}, skipping deletion.`);
-                } else {
-                    console.error(`Failed to delete old product image file: ${oldImagePath}`, err);
-                    throw err;
-                }
+    // 8. If update is successful, delete the old image file if necessary
+    if (updatedProduct && oldImagePath) {
+        try {
+            await fs.unlink(oldImagePath); 
+            console.log(`Successfully deleted old image: ${oldImagePath}`);
+        } catch (err) {
+            if (err.code === 'ENOENT') {
+                console.warn(`Old image file not found at ${oldImagePath}, skipping deletion.`);
+            } else {
+                // Log the error but don't fail the request since the product was updated
+                console.error(`Failed to delete old product image file: ${oldImagePath}`, err);
             }
         }
-        res.status(200).json(JSend.success({ product: updatedProduct }));
-    } else {
+    }
+    
+    // 9. Send success response
+    if (!updatedProduct) {
         return next(new ApiError(404, "No product found with that ID to update"));
     }
+    res.status(200).json(JSend.success({ product: updatedProduct }));
 });
+
 
 const getAllProducts = catchAsync(async (req, res, _next) => {
     const filters = req.query;
