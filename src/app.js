@@ -206,7 +206,7 @@ console.log('Swagger UI setup line executed.');
 app.use('/api/', apiLimiter);
 
 // Serve static files (e.g., product images)
-app.use("/public", express.static("public"));
+app.use("/public", cors(), express.static("public"));
 
 // Đăng ký các router
 // Quan trọng: Auth router nên được đăng ký đầu tiên nếu bạn muốn xác thực hoạt động trước các route khác
