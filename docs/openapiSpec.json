@@ -11,7 +11,7 @@
   },
   "servers": [
     {
-      "url": "https://api.fashion.drstone.id.vn",
+      "url": "http://localhost:3000",
       "description": "Development server"
     }
   ],
@@ -2579,14 +2579,7 @@
             "minLength": 8,
             "example": "StrongP@ssw0rd!"
           },
-          "role": {
-            "type": "string",
-            "enum": [
-              "user",
-              "admin"
-            ],
-            "default": "user"
-          },
+          "role": { "type": "string", "enum": ["user", "admin"], "default": "user" },
           "phone": {
             "type": "string",
             "pattern": "^\\+?\\d{9,15}$",

@@ -33,48 +33,8 @@ try {
 
 const app = express();
 
-// Trust the first proxy in front of the app (e.g., Railway's load balancer)
-// This is crucial for express-rate-limit to work correctly.
-app.set('trust proxy', 1);
-
-// Set up CORS options
-const allowedOrigins = [
-  'http://localhost:5173',
-  'http://localhost:3000',
-  'https://fashion.drstone.id.vn',
-  'https://api.fashion.drstone.id.vn'
-];
-
-const corsOptions = {
-  origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-
-    // Allow all origins from vercel.app subdomains
-    if (/\.vercel\.app$/.test(origin)) {
-        return callback(null, true);
-    }
-    
-    // Allow all origins from railway.app subdomains
-    if (/\.up\.railway\.app$/.test(origin)) {
-        return callback(null, true);
-    }
-
-    if (allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      // IMPORTANT: Do not use `new Error()` here as it causes a 500 error.
-      // Just signal that the origin is not allowed.
-      callback(null, false);
-    }
-  },
-  credentials: true, // Allow cookies to be sent
-};
-
-app.use(cors(corsOptions));
-
-
 // Các Middlewares toàn cục
+app.use(cors());
 app.use(express.json()); // Để xử lý application/json
 app.use(express.urlencoded({ extended: true })); // Để xử lý application/x-www-form-urlencoded
 
