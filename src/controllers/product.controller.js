@@ -120,8 +120,67 @@ const updateProduct = catchAsync(async (req, res, next) => {
     return res.status(200).json(JSend.success({ product: updatedProduct }));
 });
 
+const getAllProducts = catchAsync(async (req, res, _next) => {
+    const filters = req.query;
+    const { products, totalItems, currentPage, totalPages, limit } =
+        await productService.getAllProducts(filters);
+    res.status(200).json(
+        JSend.success({
+            products,
+            metadata: {
+                totalRecords: totalItems,
+                currentPage,
+                totalPages,
+                firstPage: 1,
+                lastPage: totalPages,
+                limit: limit,
+            },
+        })
+    );
+});
+
+const getProductById = catchAsync(async (req, res, _next) => {
+    const product = await productService.getProductById(req.params.id);
+    if (!product)
+        return _next(new ApiError(404, "No product found with that ID"));
+    res.status(200).json(JSend.success({ product }));
+});
+
+const deleteProduct = catchAsync(async (req, res, _next) => {
+    const productId = req.params.id;
+    const product = await productService.getProductById(productId);
+
+    if (product) {
+        const deleted = await productService.deleteProduct(productId);
+        if (!deleted) {
+            return _next(
+                new ApiError(500, "Failed to delete product from database.")
+            );
+        }
+        if (
+            product.image_url &&
+            product.image_url.includes("/public/image/products/product-") // <-- SỬA TỪ 'img' THÀNH 'image'
+        ) {
+            const imageFilePath = path.join(__dirname, "../..", product.image_url);
+            try {
+                await fs.unlink(imageFilePath);
+            } catch (err) {
+                if (err.code === 'ENOENT') {
+                    console.warn(`Image file not found during product deletion, skipping: ${imageFilePath}`);
+                } else {
+                    console.error(`Failed to delete product image file: ${imageFilePath}`, err);
+                }
+            }
+        }
+        res.status(204).json(JSend.success());
+    } else {
+        return _next(new ApiError(404, "No product found with that ID to delete"));
+    }
+});
+
 
 const deleteAllProducts = catchAsync(async (req, res, _next) => {
+
     const allProducts = await productService.getAllProducts({});
     const imagePathsToDelete = allProducts.products
         .filter(
