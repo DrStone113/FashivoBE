@@ -217,9 +217,12 @@ console.log('Swagger UI setup line executed.');
 
 app.use('/api/', apiLimiter);
 
-// Serve static files (e.g., product images)
-// The global CORS middleware now handles this.
-app.use("/public", express.static("public"));
+// Serve static files (e.g., product images) with explicit CORS headers
+app.use("/public", express.static("public", {
+  setHeaders: function (res, path, stat) {
+    res.set('Access-Control-Allow-Origin', '*');
+  }
+}));
 
 // Đăng ký các router
 // Quan trọng: Auth router nên được đăng ký đầu tiên nếu bạn muốn xác thực hoạt động trước các route khác
