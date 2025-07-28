@@ -48,8 +48,9 @@ module.exports.setup = (app) => {
     .post(
       authenticate,
       restrictTo('admin'),
-      upload.single("imageFile"),
+      upload.any(),
       validate(productSchemas.createProductSchema),
+
       productController.createProduct
     )
     .delete(
@@ -66,8 +67,9 @@ module.exports.setup = (app) => {
     .put(
       authenticate,
       restrictTo('admin'),
-      upload.single("imageFile"),
+      upload.any(),
       validate(productSchemas.updateProductSchema),
+
       productController.updateProduct
     )
     .delete(
