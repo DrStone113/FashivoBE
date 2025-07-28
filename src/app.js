@@ -33,6 +33,10 @@ try {
 
 const app = express();
 
+// Trust the first proxy, which is standard for hosting platforms like Railway.
+// This is crucial for rate limiting and other security features to work correctly.
+app.set('trust proxy', 1);
+
 // Các Middlewares toàn cục
 app.use(cors());
 app.use(express.json()); // Để xử lý application/json
