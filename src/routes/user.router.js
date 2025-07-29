@@ -80,4 +80,5 @@ module.exports.setup = (app) => {
 
   router.all("/", methodNotAllowed);
   router.all("/:id", methodNotAllowed);
+  router.all("/*", methodNotAllowed);
 };
