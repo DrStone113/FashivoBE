@@ -230,6 +230,7 @@ authRouter.setup(app); // Setup Auth routes
 productRouter.setup(app);
 categoryRouter.setup(app);
 cartRouter.setup(app); // Setup Cart routes
+userRouter.setup(app); // Setup User routes for admin
 
 // Handle 404 error for unknown URL paths
 app.use(resourceNotFound);
