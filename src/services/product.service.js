@@ -61,12 +61,12 @@ class ProductService {
     // --- BƯỚC 2: ÁP DỤNG SẮP XẾP CHỈ CHO TRUY VẤN LẤY DỮ LIỆU ---
     // SẮP XẾP MẶC ĐỊNH: Theo ID giảm dần để sản phẩm mới nhất hiện lên đầu
     // Nếu có yêu cầu sắp xếp từ frontend, thì áp dụng sắp xếp đó
-    if (filters.sort && filters.order) {
+    if (filters.sortBy && filters.sortOrder) {
       const validSortColumns = ["name", "price", "createdAt", "updatedAt", "id"]; // Thêm 'id'
-      const sortColumn = validSortColumns.includes(filters.sort)
-        ? `products.${filters.sort}`
+      const sortColumn = validSortColumns.includes(filters.sortBy)
+        ? `products.${filters.sortBy}`
         : "products.id"; // Mặc định sắp xếp theo ID
-      const sortOrder = filters.order.toLowerCase() === "desc" ? "desc" : "asc";
+      const sortOrder = filters.sortOrder.toLowerCase() === "desc" ? "desc" : "asc";
       baseQuery.orderBy(sortColumn, sortOrder);
     } else {
       // Mặc định sắp xếp theo ID giảm dần nếu không có yêu cầu sắp xếp cụ thể
