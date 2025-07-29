@@ -48,7 +48,7 @@ module.exports.setup = (app) => {
   router.route('/signup')
     .post(
       authLimiter,
-      upload.single('avatar'), // CHO PHÉP UPLOAD MỘT FILE AVATAR KHI ĐĂNG KÝ
+      upload.single('avatarFile'), // CHO PHÉP UPLOAD MỘT FILE AVATAR KHI ĐĂNG KÝ
       validate(authSchemas.signupSchema), 
       authController.signup
     )
@@ -91,7 +91,7 @@ module.exports.setup = (app) => {
   router.route('/me')
     .get(authController.getMe)
     .patch( 
-      upload.single('avatar'), 
+      upload.single('avatarFile'), 
       validate(authSchemas.updateProfileSchema), 
       authController.updateMe
     )
